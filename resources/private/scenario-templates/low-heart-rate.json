@@ -1,0 +1,249 @@
+[
+  {
+    "id": "ed93d3e25d783246",
+    "type": "comment",
+    "name": "Low Sleeping Heart Rate",
+    "info": "",
+    "x": 130,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "c4e7236d18ab28bc",
+    "type": "inject",
+    "name": "00:00 - 07:00",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/1 0-6 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 520,
+    "wires": [
+      [
+        "2c6f3d9835900cc3"
+      ]
+    ]
+  },
+  {
+    "id": "7bd2e4b706f88106",
+    "type": "inject",
+    "name": "23:00 - 00:00",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "*/1 23 * * *",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 600,
+    "wires": [
+      [
+        "2c6f3d9835900cc3"
+      ]
+    ]
+  },
+  {
+    "id": "2c6f3d9835900cc3",
+    "type": "function",
+    "name": "SQL Query Handler",
+    "func": "const currentTimestamp =  new Date();\n\nconst currentDay = String(currentTimestamp.getDate()).padStart(2, '0');\nconst currentMonth = String(currentTimestamp.getMonth()+1).padStart(2,\"0\");\nconst currentYear = currentTimestamp.getFullYear();\n\nconst currentHours = currentTimestamp.getHours() < 10 ? '0' + currentTimestamp.getHours() : currentTimestamp.getHours();\nconst currentMinutes = currentTimestamp.getMinutes() < 10 ? '0' + currentTimestamp.getMinutes() : currentTimestamp.getMinutes();\nconst currentSeconds = currentTimestamp.getSeconds() < 10 ? '0' + currentTimestamp.getSeconds() : currentTimestamp.getSeconds();\n\nconst currentDate = `${currentYear}-${currentMonth}-${currentDay} ${currentHours}:${currentMinutes}:${currentSeconds}`;\n\nlet previousTimestamp = new Date()\n\npreviousTimestamp.setMinutes(currentTimestamp.getMinutes() - (10 + 1))\n\nconst previousDay = String(previousTimestamp.getDate()).padStart(2, '0');\nconst previousMonth = String(previousTimestamp.getMonth() + 1).padStart(2, \"0\");\nconst previousYear = previousTimestamp.getFullYear();\n\nconst previousHours = previousTimestamp.getHours() < 10 ? '0' + previousTimestamp.getHours() : previousTimestamp.getHours();\nconst previousMinutes = previousTimestamp.getMinutes() < 10 ? '0' + previousTimestamp.getMinutes() : previousTimestamp.getMinutes();\nconst previousSeconds = previousTimestamp.getSeconds() < 10 ? '0' + previousTimestamp.getSeconds() : previousTimestamp.getSeconds();;\n\nconst previousDate = `${previousYear}-${previousMonth}-${previousDay} ${previousHours}:${previousMinutes}:${previousSeconds}`;\n\nconst query = `SELECT heartrate, datetime\n               FROM heartrate\n               WHERE datetime > '${previousDate}'\n                 AND datetime < '${currentDate}'\n               ORDER BY datetime`\n\nmsg.topic = query;\nmsg.payload = query;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 560,
+    "wires": [
+      [
+        "755295b730e1d3ed"
+      ]
+    ]
+  },
+  {
+    "id": "755295b730e1d3ed",
+    "type": "sqlite",
+    "mydb": "da2255543614c168",
+    "sqlquery": "msg.topic",
+    "sql": "",
+    "name": "Home Gateway Database",
+    "x": 450,
+    "y": 620,
+    "wires": [
+      [
+        "c01f132930b8eeec",
+        "54bff21a47f6e7bf"
+      ]
+    ]
+  },
+  {
+    "id": "1ac67f2f55729c22",
+    "type": "debug",
+    "name": "Service Message",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1150,
+    "y": 680,
+    "wires": []
+  },
+  {
+    "id": "c01f132930b8eeec",
+    "type": "function",
+    "name": "Query Result Handler",
+    "func": "if (msg.payload.length === 0){\n    msg.payload = 'no data';\n    return msg;\n}\nlet hrData = msg.payload;\nlet startTime = null;\nlet endTime = null;\n\nmsg.payload = false;\n\nfor (const entry of hrData) {\n    const datetime = new Date(entry.datetime);\n    const heartrate = entry.heartrate;\n    if (heartrate <= 40) {\n        if (startTime === null) {\n            startTime = datetime;\n        }\n        endTime = datetime;\n    } else {\n        startTime = null;\n        endTime = null;\n    }\n    let diff = endTime - startTime;\n    if (endTime && diff >= 10 * 60 * 1000) {\n        msg.payload = true\n    }\n}\n\nmsg.topic = ''\n\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 2,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 680,
+    "wires": [
+      [
+        "8cd86a0c8ab36370"
+      ]
+    ]
+  },
+  {
+    "id": "8cd86a0c8ab36370",
+    "type": "switch",
+    "name": "Result Handler",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "true"
+      },
+      {
+        "t": "false"
+      },
+      {
+        "t": "eq",
+        "v": "no data",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 3,
+    "x": 720,
+    "y": 680,
+    "wires": [
+      [
+        "86650f2e473750af"
+      ],
+      [
+        "7f8ec210d2312eed"
+      ],
+      [
+        "e4293d012171fd24"
+      ]
+    ]
+  },
+  {
+    "id": "86650f2e473750af",
+    "type": "template",
+    "name": "Trigger Message",
+    "field": "payload",
+    "fieldType": "msg",
+    "format": "handlebars",
+    "syntax": "mustache",
+    "template": "Low Heartrate Alert!!!",
+    "output": "str",
+    "x": 930,
+    "y": 640,
+    "wires": [
+      [
+        "1ac67f2f55729c22"
+      ]
+    ]
+  },
+  {
+    "id": "7f8ec210d2312eed",
+    "type": "template",
+    "name": "All Ok Message",
+    "field": "payload",
+    "fieldType": "msg",
+    "format": "handlebars",
+    "syntax": "mustache",
+    "template": "HeartRate Ok (Low Sleeping HeartRate Service)",
+    "output": "str",
+    "x": 920,
+    "y": 680,
+    "wires": [
+      [
+        "1ac67f2f55729c22"
+      ]
+    ]
+  },
+  {
+    "id": "54bff21a47f6e7bf",
+    "type": "debug",
+    "name": "Query Result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 620,
+    "wires": []
+  },
+  {
+    "id": "e4293d012171fd24",
+    "type": "template",
+    "name": "No Data Message",
+    "field": "payload",
+    "fieldType": "msg",
+    "format": "handlebars",
+    "syntax": "mustache",
+    "template": "No HeartRate Data (Low Sleeping HeartRate Service)",
+    "output": "str",
+    "x": 930,
+    "y": 720,
+    "wires": [
+      [
+        "1ac67f2f55729c22"
+      ]
+    ]
+  },
+  {
+    "id": "da2255543614c168",
+    "type": "sqlitedb",
+    "db": "/home-gateway",
+    "mode": "RWC"
+  }
+]

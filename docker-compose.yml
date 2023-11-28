@@ -1,0 +1,270 @@
+version: '3.8'
+
+services:
+  http_api:
+    container_name: http_api
+    build:
+      context: ./api/http
+      dockerfile: Dockerfile
+    networks:
+      - cloud_network
+    env_file:
+      - api/http/api.env
+    depends_on:
+      - postgresql
+  #    healthcheck:
+  #      test: [ "CMD", "node", "healthcheck.js" ]
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 3
+
+  mqtt_api:
+    container_name: mqtt_api
+    build:
+      context: ./api/mqtt
+      dockerfile: Dockerfile
+    networks:
+      - cloud_network
+    env_file:
+      - api/mqtt/api.env
+    depends_on:
+      - postgresql
+      - mosquitto
+  #    healthcheck:
+  #      test: [ "CMD", "node", "healthcheck.js" ]
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 3
+
+  ws_api:
+    container_name: ws_api
+    build:
+      context: ./api/websocket
+      dockerfile: Dockerfile
+    networks:
+      - cloud_network
+    env_file:
+      - api/websocket/api.env
+    depends_on:
+      - postgresql
+  #    healthcheck:
+  #      test: [ "CMD", "node", "healthcheck.js" ]
+  #      interval: 10s
+  #      timeout: 5s
+  #      retries: 3
+
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    restart: unless-stopped
+    user: root
+    networks:
+      - cloud_network
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "9999:9999"
+    volumes:
+      - haproxy_logs:/usr/local/etc/haproxy/log
+      - certs:/usr/local/etc/haproxy/certs:ro
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - http_api
+      - ws_api
+      - nginx
+    healthcheck:
+      test: [ "CMD", "haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg", "-c" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    user: root
+    restart: unless-stopped
+    networks:
+      - cloud_network
+    volumes:
+      - resources:/usr/share/nginx/resources:ro
+      - nginx_logs:/var/log/nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  postgresql:
+    image: postgres:latest
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      - cloud_network
+    ports:
+      - "8081:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_logs:/var/log
+      - ./postgres/init/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    env_file:
+      - ./postgres/postgres.env
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d iot || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    networks:
+      - cloud_network
+    ports:
+      - "8082:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    env_file:
+      - ./pgadmin/pgadmin.env
+    depends_on:
+      - postgresql
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    restart: unless-stopped
+    networks:
+      - cloud_network
+    ports:
+      - "8083:1883"
+      - "8084:8883"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/config/passwd_file:/mosquitto/config/passwd_file:ro
+
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    container_name: mqtt-explorer
+    networks:
+      - cloud_network
+    ports:
+      - "8085:4000"
+    volumes:
+      - mqtt-explorer_config:/mqtt-explorer/config
+
+#  mqttx:
+#    image: emqx/mqttx-web:latest
+#    container_name: mqttx
+#    networks:
+#      - cloud_network
+#    depends_on:
+#      mosquitto:
+#        condition: service_started
+
+
+#  ubuntu:
+#    build:
+#      context: ./ubuntu
+#      dockerfile: Dockerfile
+#    container_name: ubuntu
+#    restart: unless-stopped
+#    privileged: true
+#    networks:
+#      - vlan_api
+#    ports:
+#      - "2222:22"
+#      - "80:80"
+#      - "443:443"
+#      - "8080:8080"
+#      - "8081:8081"
+#      - "8082:8082"
+#    depends_on:
+#      haproxy:
+#        condition: service_started
+#      pgadmin:
+#        condition: service_started
+#      mqttx:
+#        condition: service_started
+
+networks:
+  cloud_network:
+
+
+volumes:
+  resources:
+    driver: local
+    name: resources
+    driver_opts:
+      type: none
+      device: resources
+      o: bind
+  haproxy_logs:
+    driver: local
+    name: haproxy_logs
+    driver_opts:
+      type: none
+      device: haproxy/log
+      o: bind
+  postgres_data:
+    driver: local
+    name: postgres_data
+    driver_opts:
+      type: none
+      device: postgres/data
+      o: bind
+  postgres_logs:
+    driver: local
+    name: postgres_logs
+    driver_opts:
+      type: none
+      device: postgres/log
+      o: bind
+  pgadmin_data:
+    driver: local
+    name: pgadmin_data
+    driver_opts:
+      type: none
+      device: pgadmin/data
+      o: bind
+  mosquitto_data:
+    driver: local
+    name: mosquitto_data
+    driver_opts:
+      type: none
+      device: mosquitto/data
+      o: bind
+  mosquitto_logs:
+    driver: local
+    name: mosquitto_logs
+    driver_opts:
+      type: none
+      device: mosquitto/log
+      o: bind
+  certs:
+    driver: local
+    name: certs
+    driver_opts:
+      type: none
+      device: certs
+      o: bind
+  nginx_logs:
+    driver: local
+    name: nginx_logs
+    driver_opts:
+      type: none
+      device: nginx/log
+      o: bind
+  mqtt-explorer_config:
+    driver: local
+    name: mqtt-explorer_config
+    driver_opts:
+      type: none
+      device: mqtt-explorer/config
+      o: bind
+  rsyslog_logs:
+    driver: local
+    name: nginx_logs
+    driver_opts:
+      type: none
+      device: rsyslog/log
+      o: bind

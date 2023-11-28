@@ -1,0 +1,59 @@
+{
+  "ConnectionManager_connections": {
+    "6e9f6ea2-b48d-4c89-b2aa-3f9da6630360": {
+      "configVersion": 1,
+      "certValidation": true,
+      "clientId": "mqtt-explorer-89d02fe3",
+      "id": "6e9f6ea2-b48d-4c89-b2aa-3f9da6630360",
+      "name": "IoT Broker MQTT",
+      "encryption": false,
+      "password": "cloud",
+      "username": "cloud",
+      "subscriptions": [
+        {
+          "topic": "#",
+          "qos": 0
+        },
+        {
+          "topic": "$SYS/#",
+          "qos": 0
+        }
+      ],
+      "type": "mqtt",
+      "host": "mosquitto",
+      "port": 1883,
+      "protocol": "mqtt",
+      "changeSet": {
+        "password": "cloud"
+      }
+    },
+    "a81d240f-8d82-4fc6-9639-345765c2e049": {
+      "configVersion": 1,
+      "certValidation": true,
+      "clientId": "mqtt-explorer-bbb3945c",
+      "id": "a81d240f-8d82-4fc6-9639-345765c2e049",
+      "name": "IoT Broker MQTT Over WS",
+      "encryption": false,
+      "password": "cloud",
+      "username": "cloud",
+      "subscriptions": [
+        {
+          "topic": "#",
+          "qos": 0
+        },
+        {
+          "topic": "$SYS/#",
+          "qos": 0
+        }
+      ],
+      "type": "mqtt",
+      "host": "mosquitto",
+      "port": "8883",
+      "protocol": "ws",
+      "basePath": "ws",
+      "changeSet": {
+        "password": "cloud"
+      }
+    }
+  }
+}

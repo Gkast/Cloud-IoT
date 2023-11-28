@@ -1,0 +1,5 @@
+node_modules/
+dist/
+api_dev.env
+api.env
+nodemon.json

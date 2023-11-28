@@ -1,0 +1,15 @@
+{
+  "watch": [
+    "src"
+  ],
+  "ext": "ts",
+  "ignore": [
+    "src/**/*.spec.ts"
+  ],
+  "exec": "tsc && node ./dist/main.js",
+  "sourceMap": true,
+  "delay": 1500,
+  "events": {
+    "quit": "pkill -SIGUSR2 -f main.js && echo 'App stopped by SIGINT and sent SIGUSR2'"
+  }
+}
