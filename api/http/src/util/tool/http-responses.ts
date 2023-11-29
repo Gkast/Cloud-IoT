@@ -1,9 +1,9 @@
-import {MyHttpResponse} from "./http-tools";
+import {HttpStatusCodes, MyHttpResponse} from "./http-tools";
 import {getMimeType} from "./mime-types";
 
-export function jsonResponse(body: Object): MyHttpResponse {
+export function jsonResponse(body: { [key: string]: any }, status?: HttpStatusCodes): MyHttpResponse {
     return {
-        status: 200,
+        status: status || 200,
         headers: {"content-type": getMimeType("json")},
         body: JSON.stringify(body, null, 2)
     }

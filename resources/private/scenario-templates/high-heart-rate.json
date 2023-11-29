@@ -86,7 +86,7 @@
   {
     "id": "ebaafc9ae09cd962",
     "type": "sqlite",
-    "mydb": "da2255543614c168",
+    "mydb": "MYDB_ID",
     "sqlquery": "msg.topic",
     "sql": "",
     "name": "Home Gateway Database",
@@ -119,7 +119,7 @@
     "id": "03d1b27a328ad2ef",
     "type": "function",
     "name": "Query Result Handler",
-    "func": "if (msg.payload.length === 0){\n    msg.payload = 'no data';\n    return msg;\n}\nlet hrData = msg.payload;\nlet startTime = null;\nlet endTime = null;\n\nmsg.payload = false;\n\nfor (const entry of hrData) {\n    const datetime = new Date(entry.datetime);\n    const heartrate = entry.heartrate;\n    if (heartrate >= 100) {\n        if (startTime === null) {\n            startTime = datetime;\n        }\n        endTime = datetime;\n    } else {\n        startTime = null;\n        endTime = null;\n    }\n    let diff = endTime - startTime;\n    if (endTime && diff >= 10 * 60 * 1000) {\n        msg.payload = true\n    }\n}\n\nmsg.topic = ''\n\n\nreturn msg;",
+    "func": "if (msg.payload.length === 0){\n    msg.payload = 'no data';\n    return msg;\n}\nlet hrData = msg.payload;\nlet startTime = null;\nlet endTime = null;\n\nmsg.payload = false;\n\nfor (const entry of hrData) {\n    const datetime = new Date(entry.datetime);\n    const heartrate = entry.heartrate;\n    if (heartrate >= HR_THRESHOLD) {\n        if (startTime === null) {\n            startTime = datetime;\n        }\n        endTime = datetime;\n    } else {\n        startTime = null;\n        endTime = null;\n    }\n    let diff = endTime - startTime;\n    if (endTime && diff >= 10 * 60 * 1000) {\n        msg.payload = true\n    }\n}\n\nmsg.topic = ''\n\n\nreturn msg;",
     "outputs": 1,
     "timeout": 0,
     "noerr": 2,
@@ -239,11 +239,5 @@
         "88e8dbbd884979a4"
       ]
     ]
-  },
-  {
-    "id": "da2255543614c168",
-    "type": "sqlitedb",
-    "db": "/home-gateway",
-    "mode": "RWC"
   }
 ]
