@@ -40,14 +40,22 @@ export function parseRequestCookies(cookie: string) {
     return allCookiesMap;
 }
 
-export async function authDevice(device_id: string, pool: Pool): Promise<boolean> {
-    const auth_result = await pool.query(`SELECT device_id
-                                          FROM accepted_home_gateways
-                                          WHERE device_id = $1`, [device_id])
+export type DeviceCreds = {
+    device_id?: string
+    ip_address?: string
+    username?: string
+    password?: string
+    user_id?: string
+}
+
+export async function authDevice(device_id: string, pool: Pool): Promise<DeviceCreds | undefined> {
+    const auth_result = await pool.query<DeviceCreds>(`SELECT ip_address, username, password
+                                                       FROM accepted_home_gateways
+                                                       WHERE device_id = $1`, [device_id])
     if (!auth_result.rows[0]) {
         logInfo('Unauthorized')
-        return false
+        return undefined
     }
-    logInfo('Authorized')
-    return true
+    const {ip_address, username, password} = auth_result.rows[0]
+    return {ip_address, username, password}
 }

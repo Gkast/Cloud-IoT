@@ -5,7 +5,8 @@ import {jsonResponse, notFoundResponse} from "../tool/http-responses";
 import {getAllUsers} from "../../handler/user-handler";
 import {logInfo} from "../tool/logger";
 import {getHighHeartrateScenario, getLowHeartrateScenario,} from "../../handler/heartrate-handler";
-import {addHeartrateScenario, getNodeRedConfig,} from "../../handler/node-red-config";
+import {getNodeRedConfig,} from "../../handler/node-red-config";
+import {addHeartrateScenario, addScenarioV1} from "../../handler/scenario-handler";
 
 export type HttpMethod =
     | "GET"
@@ -71,6 +72,7 @@ async function configureHttpRoutes(
         "/api/node-red/add-heartrate",
         addHeartrateScenario(dbPool),
     );
+    httpRouter.add("GET", "/api/test/scenario", addScenarioV1(dbPool, 1, 'coreVM'))
 
     if (process.env.NODE_ENV === "production")
         httpRouter.add("GET", "/health", () =>
