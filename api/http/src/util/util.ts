@@ -1,4 +1,4 @@
-import {IncomingMessage, ServerResponse} from "http";
+import http, {IncomingMessage, ServerResponse} from "http";
 import {Pool} from "pg";
 import {logInfo} from "./tool/logger";
 
@@ -48,14 +48,23 @@ export type DeviceCreds = {
     user_id?: string
 }
 
-export async function authDevice(device_id: string, pool: Pool): Promise<DeviceCreds | undefined> {
-    const auth_result = await pool.query<DeviceCreds>(`SELECT ip_address, username, password
-                                                       FROM accepted_home_gateways
-                                                       WHERE device_id = $1`, [device_id])
-    if (!auth_result.rows[0]) {
+export async function authDevice(deviceID: string, pool: Pool): Promise<DeviceCreds | undefined> {
+    const authResult = await pool.query<DeviceCreds>(`SELECT ip_address, username, password
+                                                      FROM accepted_home_gateways
+                                                      WHERE device_id = $1`, [deviceID])
+    if (!authResult.rows[0]) {
         logInfo('Unauthorized')
         return undefined
     }
-    const {ip_address, username, password} = auth_result.rows[0]
+    const {ip_address, username, password} = authResult.rows[0]
     return {ip_address, username, password}
+}
+
+export function getHTTP(url: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const req = http.get(url, res => streamToString(res)
+            .then(body => resolve(JSON.parse(body)))
+            .catch(reason => reject(reason)))
+        req.on('error', err => reject(err))
+    })
 }

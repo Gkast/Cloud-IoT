@@ -4,9 +4,8 @@ import {Pool} from "pg";
 import {jsonResponse, notFoundResponse} from "../tool/http-responses";
 import {getAllUsers} from "../../handler/user-handler";
 import {logInfo} from "../tool/logger";
-import {getHighHeartrateScenario, getLowHeartrateScenario,} from "../../handler/heartrate-handler";
 import {getNodeRedConfig,} from "../../handler/node-red-config";
-import {addHeartrateScenario, addScenarioV1} from "../../handler/scenario-handler";
+import {addScenario} from "../../handler/scenario-handler";
 
 export type HttpMethod =
     | "GET"
@@ -56,23 +55,8 @@ async function configureHttpRoutes(
     httpRouter.add("POST", "*", () => Promise.resolve(notFoundResponse()));
 
     httpRouter.add("GET", "/api/get-users", getAllUsers(dbPool));
-    httpRouter.add(
-        "GET",
-        "/api/scenario/high-heart-rate",
-        getHighHeartrateScenario(dbPool),
-    );
-    httpRouter.add(
-        "GET",
-        "/api/scenario/low-heart-rate",
-        getLowHeartrateScenario(dbPool),
-    );
     httpRouter.add("GET", "/api/node-red/flows", getNodeRedConfig(dbPool));
-    httpRouter.add(
-        "GET",
-        "/api/node-red/add-heartrate",
-        addHeartrateScenario(dbPool),
-    );
-    httpRouter.add("GET", "/api/test/scenario", addScenarioV1(dbPool, 1, 'coreVM'))
+    httpRouter.add("GET", "/api/node-red/add-scenario", addScenario(dbPool))
 
     if (process.env.NODE_ENV === "production")
         httpRouter.add("GET", "/health", () =>
