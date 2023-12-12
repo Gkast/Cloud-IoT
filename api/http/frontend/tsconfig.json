@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
+    "target": "ES5",
+    "module": "AMD",
     "lib": [
-      "es2018"
+      "ES6",
+      "DOM"
     ],
     // "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
-    "outDir": "dist",
+    "outFile": "/home/corelab/Desktop/IoT Project/Cloud-IoT/resources/public/js/client.js",
     "rootDir": "src",
     "resolveJsonModule": true,
     "declaration": true,
@@ -19,10 +20,11 @@
     "removeComments": true
   },
   "include": [
-    "src/**/*.ts"
+    "server/src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "**/*.spec.ts"
   ]
 }

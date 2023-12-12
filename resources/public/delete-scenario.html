@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Delete Scenario</title>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #deleteScenario {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        label,
+        select,
+        input[type="text"],
+        button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        @media (min-width: 480px) {
+            #deleteScenario {
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<form action="https://10.245.10.84/api/node-red/delete-scenario" id="deleteScenario" method="GET">
+    <label for="device_id">Device ID:</label>
+    <input id="device_id" name="device_id" required type="text">
+    <label for="scenario_id">Scenario:</label>
+    <select id="scenario_id" name="scenario_id" required>
+        <option value="">Select Scenario</option>
+        <option value="1">High Heart Rate</option>
+        <option value="2">Low Heart Rate</option>
+    </select>
+    <button type="submit">Delete Scenario</button>
+</form>
+
+</body>
+</html>

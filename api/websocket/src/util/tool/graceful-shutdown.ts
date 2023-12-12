@@ -20,7 +20,7 @@ export async function initializeGracefulShutdownMechanism(server: Server, dbPool
     logInfo('Graceful Shutdown Mechanism Initialized');
 }
 
-export async function gracefulShutdown(server: Server, dbPool: Pool, timeoutMs: number) {
+export async function gracefulShutdown(wss: Server, dbPool: Pool, timeoutMs: number) {
     try {
         logInfo('Shutting Down Gracefully')
         const timeout = setTimeout(() => {
@@ -28,7 +28,8 @@ export async function gracefulShutdown(server: Server, dbPool: Pool, timeoutMs: 
             process.exit(1);
         }, timeoutMs);
         logInfo('Closing WebSocket Server')
-        server.close()
+        wss.close()
+        wss.clients.forEach((socket) => socket.close());
         logInfo('Closing Database Pool Connection')
         await dbPool.end()
         clearTimeout(timeout)

@@ -46,18 +46,19 @@ export type DeviceCreds = {
     username?: string
     password?: string
     user_id?: string
+    is_alive?: boolean
 }
 
 export async function authDevice(deviceID: string, pool: Pool): Promise<DeviceCreds | undefined> {
-    const authResult = await pool.query<DeviceCreds>(`SELECT ip_address, username, password
+    const authResult = await pool.query<DeviceCreds>(`SELECT ip_address, username, password, is_alive
                                                       FROM accepted_home_gateways
                                                       WHERE device_id = $1`, [deviceID])
     if (!authResult.rows[0]) {
         logInfo('Unauthorized')
         return undefined
     }
-    const {ip_address, username, password} = authResult.rows[0]
-    return {ip_address, username, password}
+    const {ip_address, username, password, is_alive} = authResult.rows[0]
+    return {ip_address, username, password, is_alive}
 }
 
 export function getHTTP(url: string): Promise<any> {

@@ -15,47 +15,9 @@ iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
-declare -A PORTS=(
-    [80]=172.16.10.3:80
-    [443]=172.16.10.3:443
-    [8080]=172.16.10.3:8080
-    [1883]=172.16.10.4:1883
-    [8081]=172.16.10.5:80
-    [8082]=172.16.10.6:80
-)
-
 sysctl -w net.ipv4.ip_forward=1
 
-## Function to add port forwarding and forwarding rules
-#add_port_forwarding() {
-#    local external_port="$1"
-#    local internal_destination="$2"
-#
-#    # Allow forwarding of the redirected packets
-#    iptables -A FORWARD -i eth0 -p tcp --dport "$external_port" -d "${internal_destination%:*}" -j ACCEPT
-#
-#    # Redirect incoming packets to internal IPs and ports
-#    iptables -t nat -A PREROUTING -i eth0 -p tcp --dport "$external_port" -j DNAT --to-destination "$internal_destination"
-#}
-#
-## Allow established and related connections
-#iptables -A FORWARD -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT
-#
-## Loop through defined ports for port forwarding
-#for external_port in "${!PORTS[@]}"; do
-#    internal_destination="${PORTS[$external_port]}"
-#    echo "Port forward: $internal_destination $external_port"
-#    add_port_forwarding "$external_port" "$internal_destination"
-#done
-#
-## Set up masquerading for outgoing connections
-#iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
-# Apply port forwarding rules
 declare -A PORTS=(
-    [80]=172.16.10.3:80
-    [443]=172.16.10.3:443
-    [8080]=172.16.10.3:8080
     [1883]=172.16.10.4:1883
     [8081]=172.16.10.5:80
     [8082]=172.16.10.6:80
@@ -72,13 +34,6 @@ add_port_forwarding() {
     # Allow forwarding of the redirected packets
     iptables -A FORWARD -i eth0 -p tcp --dport "$external_port" -d "${internal_destination%:*}" -j ACCEPT
 
-    # Mark packets for specific ports
-    case "$external_port" in
-    80|443|8080) # List of ports not to be MASQUERADED
-        iptables -t mangle -A OUTPUT -p tcp --sport "$external_port" -j MARK --set-mark 1
-        ;;
-    esac
-
     # Redirect incoming packets to internal IPs and ports
     iptables -t nat -A PREROUTING -i eth0 -p tcp --dport "$external_port" -j DNAT --to-destination "$internal_destination"
 }
@@ -94,7 +49,7 @@ for external_port in "${!PORTS[@]}"; do
 done
 
 # Set up masquerading for outgoing connections, excluding marked packets
-iptables -t nat -A POSTROUTING -o eth0 -m mark ! --mark 1 -j MASQUERADE
+iptables -t nat -A POSTROUTING -j MASQUERADE
 
 # Drop invalid/malformed packets and prevent certain TCP flag combinations
 iptables -A INPUT -m conntrack --ctstate INVALID -j LOG --log-prefix "INVALID: "
@@ -141,9 +96,14 @@ rate_limit_ports() {
     iptables -A INPUT -p tcp --dport "$port" -m conntrack --ctstate NEW -j DROP
 }
 
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
 # Apply rate limits to ports 80 and 443
 rate_limit_ports 80
 rate_limit_ports 443
 
 # Display configured rules
 iptables -L -v --line-numbers
+

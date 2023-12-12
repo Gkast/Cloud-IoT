@@ -4,8 +4,10 @@ import {Pool} from "pg";
 import {jsonResponse, notFoundResponse} from "../tool/http-responses";
 import {getAllUsers} from "../../handler/user-handler";
 import {logInfo} from "../tool/logger";
-import {getNodeRedConfig,} from "../../handler/node-red-config";
-import {addScenario} from "../../handler/scenario-handler";
+import {getNodeRedConfigBrowser,} from "../../handler/node-red/node-red-config";
+import {deleteScenario} from "../../handler/scenario/delete-scenario-handler";
+import {addScenario} from "../../handler/scenario/add-scenario-handler";
+import {updateScenario} from "../../handler/scenario/update-scenario-handler";
 
 export type HttpMethod =
     | "GET"
@@ -55,8 +57,10 @@ async function configureHttpRoutes(
     httpRouter.add("POST", "*", () => Promise.resolve(notFoundResponse()));
 
     httpRouter.add("GET", "/api/get-users", getAllUsers(dbPool));
-    httpRouter.add("GET", "/api/node-red/flows", getNodeRedConfig(dbPool));
+    httpRouter.add("GET", "/api/node-red/flows", getNodeRedConfigBrowser(dbPool));
     httpRouter.add("GET", "/api/node-red/add-scenario", addScenario(dbPool))
+    httpRouter.add("GET", "/api/node-red/delete-scenario", deleteScenario(dbPool))
+    httpRouter.add("GET", "/api/node-red/update-scenario", updateScenario(dbPool))
 
     if (process.env.NODE_ENV === "production")
         httpRouter.add("GET", "/health", () =>

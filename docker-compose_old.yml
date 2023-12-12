@@ -8,7 +8,7 @@ services:
       context: api/http/backend
       dockerfile: Dockerfile
     networks:
-      - cloud_network
+      - private_cloud_network
     env_file:
       - api/http/backend/api.env
     depends_on:
@@ -26,7 +26,7 @@ services:
       context: ./api/mqtt
       dockerfile: Dockerfile
     networks:
-      - cloud_network
+      - private_cloud_network
     env_file:
       - api/mqtt/api.env
     depends_on:
@@ -45,7 +45,7 @@ services:
       context: ./api/websocket
       dockerfile: Dockerfile
     networks:
-      - cloud_network
+      - private_cloud_network
     env_file:
       - api/websocket/api.env
     depends_on:
@@ -62,12 +62,8 @@ services:
     restart: unless-stopped
     user: root
     networks:
-      - cloud_network
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-      - "9999:9999"
+      private_cloud_network:
+        ipv4_address: 172.16.10.3
     volumes:
       - haproxy_logs:/usr/local/etc/haproxy/log
       - certs:/usr/local/etc/haproxy/certs:ro
@@ -88,7 +84,7 @@ services:
     user: root
     restart: unless-stopped
     networks:
-      - cloud_network
+      - private_cloud_network
     volumes:
       - resources:/usr/share/nginx/resources:ro
       - nginx_logs:/var/log/nginx
@@ -99,9 +95,7 @@ services:
     container_name: postgres
     restart: unless-stopped
     networks:
-      - cloud_network
-    ports:
-      - "8081:5432"
+      - private_cloud_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - postgres_logs:/var/log
@@ -121,9 +115,8 @@ services:
     container_name: pgadmin
     restart: unless-stopped
     networks:
-      - cloud_network
-    ports:
-      - "8082:80"
+      private_cloud_network:
+        ipv4_address: 172.16.10.5
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     env_file:
@@ -136,10 +129,8 @@ services:
     container_name: mosquitto
     restart: unless-stopped
     networks:
-      - cloud_network
-    ports:
-      - "8083:1883"
-      - "8084:8883"
+      private_cloud_network:
+        ipv4_address: 172.16.10.4
     volumes:
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
@@ -151,15 +142,44 @@ services:
     container_name: mqtt-explorer
     restart: unless-stopped
     networks:
-      - cloud_network
-    ports:
-      - "8085:4000"
+      private_cloud_network:
+        ipv4_address: 172.16.10.6
     volumes:
       - mqtt-explorer_config:/mqtt-explorer/config
 
 
+  ubuntu:
+    build:
+      context: ./ubuntu
+      dockerfile: Dockerfile
+    container_name: firewall
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - private_cloud_network
+    ports:
+      - "2222:22"
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+    depends_on:
+      haproxy:
+        condition: service_started
+      pgadmin:
+        condition: service_started
+      mqtt_explorer:
+        condition: service_started
+
 networks:
-  cloud_network:
+  private_cloud_network:
+    name: private_cloud_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.1.0/16
+          gateway: 172.16.1.1
 
 
 volumes:

@@ -21,7 +21,6 @@ RUN apt-get update && \
     tcpdump \
     socat \
     curl \
-    haproxy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,6 +38,4 @@ RUN chmod +x /usr/src/iptables_rules.sh && \
 
 COPY certs /usr/local/etc/haproxy/certs
 
-COPY haproxy.cfg /etc/haproxy/haproxy.cfg
-
-CMD service ssh start && service haproxy start && /usr/src/iptables_rules.sh && /usr/src/firewall-api
+CMD service ssh start && /usr/src/iptables_rules.sh && /usr/src/firewall-api

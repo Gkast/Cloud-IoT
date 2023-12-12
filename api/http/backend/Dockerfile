@@ -8,7 +8,7 @@ COPY package*.json ./
 
 RUN npm install --silent --no-progress
 
-COPY . .
+COPY .. .
 
 RUN npm run build
 

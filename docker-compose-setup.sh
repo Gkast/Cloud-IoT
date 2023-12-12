@@ -62,7 +62,7 @@ NODE_PORT=$NODE_PORT
 PG_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB"
 MQTT_URL="mqtt://$MQTT_USER:$MQTT_PASSWORD@mosquitto:1883"
 EOF
-    cd ../haproxy
+cd ../haproxy || exit
     cat << EOF > haproxy.env
 $NODE_HOST
 API_PORT=$NODE_PORT

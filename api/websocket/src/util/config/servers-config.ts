@@ -2,8 +2,9 @@ import {handleWSServerError} from "../../handler/error-handlers";
 import {handleWebSocketMessage} from "../../handler/request-handlers";
 import {WebSocketServer} from "ws";
 import {MyWebSocketRouter} from "./router-config";
-import {logWSConnection} from "../tool/logger";
+import {logError, logInfo, logWSConnection} from "../tool/logger";
 import {Pool} from "pg";
+import {authDevice, DeviceCreds, updateGatewayStatus} from "../util";
 
 export async function setupServer(router: MyWebSocketRouter, dbPool: Pool, host: string, port: number) {
     const wss = new WebSocketServer({
@@ -30,9 +31,48 @@ export async function setupServer(router: MyWebSocketRouter, dbPool: Pool, host:
         }
     });
     wss.on('connection', (ws, req) => {
-        logWSConnection(req);
-        ws.on('message', message => handleWebSocketMessage(ws, message, router, dbPool));
+        const ipAddress = process.env.NODE_ENV === 'development' ? req.socket.remoteAddress : req.headers["x-forwarded-for"] as string;
+        const channel = req.url.split('/').pop()
+        const [route] = router.findRoute(req.url)
+        logWSConnection(req, channel);
+        if (!route) {
+            logInfo("Wrong channel")
+            ws.terminate()
+        }
+        let authenticated = false
+        let deviceID: string | undefined
+        ws.on('message', async message => {
+            try {
+                const parsedMessage = JSON.parse(message.toString())
+                deviceID = parsedMessage.device_id
+                if (!authenticated) {
+                    if (!deviceID) {
+                        logInfo("Missing Device ID")
+                        ws.terminate()
+                        return
+                    }
+                    const deviceCreds: DeviceCreds = await authDevice(deviceID, ipAddress, dbPool)
+                    if (!deviceCreds) {
+                        ws.terminate()
+                        return
+                    }
+                    ws.send("Authenticated")
+                    authenticated = true
+                }
+                await handleWebSocketMessage(ws, message, router, dbPool, deviceID);
+            } catch (err) {
+                logError("WebSocket Handling Message Error:", err)
+                ws.terminate()
+            }
+        });
+        ws.on('close', async () => {
+            logInfo(ipAddress, 'Closed WebSocket Connection')
+            if (deviceID)
+                await updateGatewayStatus(deviceID, false, dbPool)
+        })
     })
     wss.on('error', err => handleWSServerError(err))
+    wss.on('listening', () => logInfo('WebSocket Server Listening at', port))
+
     return wss
 }

@@ -1,0 +1,4 @@
+Rule2
+  ON System#Boot DO SerialSend start ENDON
+  ON SerialReceived#HR DO Publish tele/tasmota_B6F300/HEARTRATE %value% ENDON
+  ON SerialReceived#SpO2 DO Publish tele/tasmota_B6F300/SPO2 %value% ENDON

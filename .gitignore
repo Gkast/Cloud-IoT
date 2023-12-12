@@ -10,8 +10,8 @@ ubuntu/ssh/
 */log/
 */data/
 postgres/init/*.sql
-api/http/api.env
-api/http/api_dev.env
+api/http/backend/api.env
+api/http/backend/api_dev.env
 api/mqtt/api.env
 api/mqtt/api_dev.env
 api/websocket/api.env

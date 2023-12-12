@@ -3,9 +3,9 @@ import {RawData} from "ws";
 import {generateTimestamp} from "../util";
 
 
-export function logWSConnection(req: IncomingMessage) {
+export function logWSConnection(req: IncomingMessage, channel?: string) {
     const remoteAddress = process.env.NODE_ENV === 'development' ? req.socket.remoteAddress || '-' : req.headers["x-forwarded-for"];
-    logInfo(`${remoteAddress} Connected to Info-Channel`)
+    logInfo(`${remoteAddress} Connected`, channel ? `to ${channel}` : '')
 }
 
 export function logWSMessage(message: RawData) {

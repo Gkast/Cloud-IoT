@@ -3,6 +3,7 @@ import {IClientSubscribeOptions, IClientSubscribeProperties, MqttClient} from "m
 import {heartrateHandler} from "../../handler/heartrate-handler";
 import {activityHandler} from "../../handler/activity-handler";
 import {logError} from "../tool/logger";
+import {spo2Handler} from "../../handler/spo2-handler";
 
 export type MyMqttHandler = (topic: string, payload: Buffer, params?: { [key: string]: string }) => Promise<void>
 
@@ -22,6 +23,7 @@ async function configureMqttRoutes(router: MyMqttRouter, dbPool: Pool) {
     try {
         router.subscribe('tele/+:id/heartrate', {qos: 1}, heartrateHandler(dbPool))
         router.subscribe('tele/+:id/activity', activityHandler(dbPool))
+        router.subscribe('tele/+:id/spo2', spo2Handler(dbPool))
     } catch (err) {
         logError('Error Subscribing:', err)
     }
