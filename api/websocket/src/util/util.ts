@@ -20,33 +20,40 @@ export type DeviceCreds = {
     username?: string
     password?: string
     user_id?: string
+    startup_commands?: string[],
+    connected_time?: Date,
+    disconnected_time?: Date
 }
 
 export async function authDevice(deviceID: string, ipAddress: string, pool: Pool): Promise<DeviceCreds | undefined> {
-    const authResult = await pool.query<DeviceCreds>(`SELECT ip_address, username, password
+    const authResult = await pool.query<DeviceCreds>(`SELECT ip_address,
+                                                             username,
+                                                             password,
+                                                             startup_commands,
+                                                             connected_time,
+                                                             disconnected_time
                                                       FROM accepted_home_gateways
                                                       WHERE device_id = $1`, [deviceID])
     if (!authResult.rows[0]) {
         logInfo('Unauthorized')
         return undefined
     }
-    const {ip_address, username, password} = authResult.rows[0]
-    await pool.query(`UPDATE accepted_home_gateways
-                      SET ip_address = $1,
-                          is_alive   = true
-                      WHERE device_id = $2`, [ipAddress, deviceID])
-    return {ip_address, username, password}
+    const {ip_address, username, password, startup_commands, connected_time, disconnected_time} = authResult.rows[0]
+    await updateIP(deviceID, ipAddress, pool)
+    return {ip_address, username, password, startup_commands, connected_time, disconnected_time}
 }
 
 export async function updateIP(deviceID: string, ipAddress: string, pool: Pool) {
     await pool.query(`UPDATE accepted_home_gateways
-                      SET ip_address = $1,
-                          is_alive   = true
+                      SET ip_address     = $1,
+                          is_alive       = true,
+                          connected_time = CURRENT_TIMESTAMP
                       WHERE device_id = $2`, [ipAddress, deviceID])
 }
 
 export async function updateGatewayStatus(deviceID: string, status: boolean, pool: Pool) {
     await pool.query(`UPDATE accepted_home_gateways
-                      SET is_alive = $1
+                      SET is_alive          = $1,
+                          disconnected_time = CURRENT_TIMESTAMP
                       WHERE device_id = $2`, [status, deviceID])
 }

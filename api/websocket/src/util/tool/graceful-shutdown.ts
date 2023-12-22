@@ -28,8 +28,12 @@ export async function gracefulShutdown(wss: Server, dbPool: Pool, timeoutMs: num
             process.exit(1);
         }, timeoutMs);
         logInfo('Closing WebSocket Server')
-        wss.close()
-        wss.clients.forEach((socket) => socket.close());
+        await new Promise<void>((resolve) => {
+            wss.close(() => {
+                wss.clients.forEach((socket) => socket.terminate());
+                resolve();
+            });
+        });
         logInfo('Closing Database Pool Connection')
         await dbPool.end()
         clearTimeout(timeout)
