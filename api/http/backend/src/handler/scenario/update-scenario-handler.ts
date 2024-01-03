@@ -64,9 +64,15 @@ export function updateScenario(pool: Pool): MyHttpHandler {
         currentFlow["nodes"] = updateNodes(currentFlow, parsedScenarioNodes)
         const res = await updateFlow(username, password, ip_address, enabled_service_pack_flow_id, currentFlow)
         if (!res) return jsonResponse({message: "something went wrong"}, 500)
+        let parsedScenarioParams = {};
+        Object.keys(service_params).forEach(key => {
+                if (userParams[key])
+                    parsedScenarioParams[`${service_params[key]}`] = userParams[key];
+            }
+        )
         await pool.query(`UPDATE enabled_services
                           SET service_params = $1
-                          WHERE id = $2`, [JSON.stringify(scenarioParamsToUpdate), enabled_service_id])
+                          WHERE id = $2`, [JSON.stringify(parsedScenarioParams), enabled_service_id])
         return jsonResponse({message: 'service updated'})
     }
 }

@@ -63,5 +63,8 @@ export declare function parseScenario(scenario: Array<{
 }[]>;
 export declare function parseScenarioParams(scenarioGrouped: ScenarioQueryResultGrouped, userParams: Array<{
     [key: string]: string;
-}>): Promise<any[]>;
+}>): Promise<{
+    paramToReplace: string;
+    replaceValue: string;
+}[]>;
 export declare function sendScenario(pool: Pool, scenarioTab: Scenario, scenarioGrouped: ScenarioQueryResultGrouped, deviceID: string, username: string, password: string, ip_address: string, scenarioParams: any[]): Promise<MyHttpResponse>;

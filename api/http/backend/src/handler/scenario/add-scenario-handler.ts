@@ -54,6 +54,7 @@ export function addScenario(pool: Pool): MyHttpHandler {
     return async req => {
         let userParams: Array<{ [key: string]: string }> = []
 
+
         // get device_id and scenario_id from query params
         const deviceID = req.url.searchParams.get('device_id')
         const scenarioID = req.url.searchParams.get('scenario_id')
@@ -214,7 +215,10 @@ export async function parseScenario(
 export async function parseScenarioParams(scenarioGrouped: ScenarioQueryResultGrouped, userParams: Array<{
     [key: string]: string
 }>) {
-    const scenarioParams = []
+    const scenarioParams: {
+        paramToReplace: string,
+        replaceValue: string
+    }[] = []
     Object.keys(scenarioGrouped.service_params).forEach(key => {
             if (userParams[key])
                 scenarioParams.push({
@@ -254,6 +258,12 @@ export function sendScenario(pool: Pool, scenarioTab: Scenario,
         }, res => streamToString(res)
             .then(async body => {
                 const parsedBody = JSON.parse(body)
+                let parsedScenario = {};
+                Object.keys(scenarioGrouped.service_params).forEach(key => {
+                        if (scenarioParams[key])
+                            parsedScenario[`${scenarioGrouped.service_params[key]}`] = scenarioParams[key];
+                    }
+                )
                 if (!parsedBody.id) reject(parsedBody)
                 if (!scenarioGrouped.is_tab_injected) {
                     await pool.query(`INSERT INTO enabled_service_packs(flow_id, home_gateway, service_pack)
@@ -262,7 +272,7 @@ export function sendScenario(pool: Pool, scenarioTab: Scenario,
                 }
                 await pool.query(`INSERT INTO enabled_services (home_gateway_id, service_id, service_params)
                                   VALUES ($1, $2, $3)`,
-                    [deviceID, scenarioGrouped.service_id, JSON.stringify(scenarioParams)])
+                    [deviceID, scenarioGrouped.service_id, JSON.stringify(parsedScenario)])
                 resolve(jsonResponse({gateway_res: parsedBody}));
             })
             .catch(reason => reject(reason)))

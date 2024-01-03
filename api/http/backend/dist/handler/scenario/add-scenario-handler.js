@@ -36,11 +36,11 @@ function addScenario(pool) {
                     s.id                        AS service_id,
                     s.url                       AS service_url,
                     s.params                    AS service_params,
-                    sp.id      AS service_pack_id,
+                    sp.id                       AS service_pack_id,
                     sp.url                      AS service_tab_url,
                     dn.data                     AS dependency_data,
-                    dn.node_id AS dependency_node_id,
-                    dn.id      AS dependency_id,
+                    dn.node_id                  AS dependency_node_id,
+                    dn.id                       AS dependency_id,
                     esp.flow_id                 AS service_pack_flow_id
              FROM services s
                       JOIN service_packs sp ON sp.id = s.service_pack_id
@@ -182,6 +182,11 @@ function sendScenario(pool, scenarioTab, scenarioGrouped, deviceID, username, pa
         }, res => (0, util_1.streamToString)(res)
             .then(async (body) => {
             const parsedBody = JSON.parse(body);
+            let parsedScenario = {};
+            Object.keys(scenarioGrouped.service_params).forEach(key => {
+                if (scenarioParams[key])
+                    parsedScenario[`${scenarioGrouped.service_params[key]}`] = scenarioParams[key];
+            });
             if (!parsedBody.id)
                 reject(parsedBody);
             if (!scenarioGrouped.is_tab_injected) {
@@ -190,7 +195,7 @@ function sendScenario(pool, scenarioTab, scenarioGrouped, deviceID, username, pa
                                       RETURNING id`, [parsedBody.id, deviceID, scenarioGrouped.service_pack_id,]);
             }
             await pool.query(`INSERT INTO enabled_services (home_gateway_id, service_id, service_params)
-                                  VALUES ($1, $2, $3)`, [deviceID, scenarioGrouped.service_id, JSON.stringify(scenarioParams)]);
+                                  VALUES ($1, $2, $3)`, [deviceID, scenarioGrouped.service_id, JSON.stringify(parsedScenario)]);
             resolve((0, http_responses_1.jsonResponse)({ gateway_res: parsedBody }));
         })
             .catch(reason => reject(reason)));

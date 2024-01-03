@@ -55,9 +55,14 @@ function updateScenario(pool) {
         const res = await (0, node_red_config_1.updateFlow)(username, password, ip_address, enabled_service_pack_flow_id, currentFlow);
         if (!res)
             return (0, http_responses_1.jsonResponse)({ message: "something went wrong" }, 500);
+        let parsedScenarioParams = {};
+        Object.keys(service_params).forEach(key => {
+            if (userParams[key])
+                parsedScenarioParams[`${service_params[key]}`] = userParams[key];
+        });
         await pool.query(`UPDATE enabled_services
                           SET service_params = $1
-                          WHERE id = $2`, [JSON.stringify(scenarioParamsToUpdate), enabled_service_id]);
+                          WHERE id = $2`, [JSON.stringify(parsedScenarioParams), enabled_service_id]);
         return (0, http_responses_1.jsonResponse)({ message: 'service updated' });
     };
 }
