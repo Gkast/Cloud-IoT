@@ -27,18 +27,22 @@ export function updateScenario(pool: Pool): MyHttpHandler {
             enabled_service_pack_id: string,
             service_pack_id: string,
             service_url: string,
-            service_params: { [key: string]: string }
+            service_params: { [key: string]: string },
+            node_id: string
         }>(`SELECT es.id             AS enabled_service_id,
                    esp.flow_id       AS enabled_service_pack_flow_id,
                    esp.id            AS enabled_service_pack_id,
                    s.service_pack_id AS service_pack_id,
                    s.url             AS service_url,
-                   s.params          AS service_params
+                   s.params   AS service_params,
+                   dn.node_id as node_id
             FROM enabled_services es
                      JOIN services s on s.id = es.service_id
                      JOIN enabled_service_packs esp
                           on s.service_pack_id = esp.service_pack AND
                              es.home_gateway_id = esp.home_gateway
+                     LEFT JOIN public.service_dependencies sd on es.service_id = sd.service_id
+                     LEFT JOIN dependency_nodes dn ON dn.id = sd.dependency_id
             WHERE es.service_id = $1
               AND es.home_gateway_id = $2`, [scenarioID, deviceID])
         if (queryRes.rows.length === 0) return jsonResponse({message: "Service is not enabled"})
@@ -46,13 +50,18 @@ export function updateScenario(pool: Pool): MyHttpHandler {
             enabled_service_pack_flow_id,
             enabled_service_id,
             service_url,
-            service_params
+            service_params,
+            node_id
         } = queryRes.rows[0]
 
         const currentFlow = await getFlow(ip_address, username, password, enabled_service_pack_flow_id)
 
         const scenarioParamsToUpdate = []
         const scenarioNodes = await getHTTP(service_url);
+        scenarioParamsToUpdate.push({
+            paramToReplace: "MYDB_ID",
+            replaceValue: node_id
+        });
         Object.keys(service_params).forEach(key => {
             if (userParams[key])
                 scenarioParamsToUpdate.push({

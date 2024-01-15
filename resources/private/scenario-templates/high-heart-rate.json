@@ -190,7 +190,7 @@
     "fieldType": "msg",
     "format": "handlebars",
     "syntax": "mustache",
-    "template": "HeartRate Ok (Low Sleeping HeartRate Service)",
+    "template": "HeartRate Ok (High Sleeping HeartRate Service)",
     "output": "str",
     "x": 740,
     "y": 340,

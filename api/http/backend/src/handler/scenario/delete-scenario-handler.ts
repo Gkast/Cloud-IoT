@@ -67,10 +67,21 @@ export function deleteScenario(pool: Pool): MyHttpHandler {
         }
 
         const scenarios = []
+        const scenarioParams: Array<{
+            paramToReplace: string,
+            replaceValue: string
+        }> = []
 
         for (const service of queryRes1.rows) {
+            const enabledServiceParams: { [key: string]: string } = JSON.parse(service.service_params)
+            Object.keys(enabledServiceParams).forEach(key => {
+                scenarioParams.push({
+                    paramToReplace: key,
+                    replaceValue: enabledServiceParams[key]
+                })
+            })
             const scenario = await getHTTP(service.service_url)
-            const parsedScenario = await parseScenario(scenario, JSON.parse(service.service_params))
+            const parsedScenario = await parseScenario(scenario, scenarioParams)
             parsedScenario.forEach(node => scenarios.push(node))
         }
 

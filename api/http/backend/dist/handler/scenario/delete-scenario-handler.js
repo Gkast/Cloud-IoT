@@ -57,9 +57,17 @@ function deleteScenario(pool) {
             return (0, http_responses_1.jsonResponse)({ message: 'service deleted' });
         }
         const scenarios = [];
+        const scenarioParams = [];
         for (const service of queryRes1.rows) {
+            const enabledServiceParams = JSON.parse(service.service_params);
+            Object.keys(enabledServiceParams).forEach(key => {
+                scenarioParams.push({
+                    paramToReplace: key,
+                    replaceValue: enabledServiceParams[key]
+                });
+            });
             const scenario = await (0, util_1.getHTTP)(service.service_url);
-            const parsedScenario = await (0, add_scenario_handler_1.parseScenario)(scenario, JSON.parse(service.service_params));
+            const parsedScenario = await (0, add_scenario_handler_1.parseScenario)(scenario, scenarioParams);
             parsedScenario.forEach(node => scenarios.push(node));
         }
         const currentFlow = await (0, node_red_config_1.getFlow)(ip_address, username, password, queryRes.rows[0].enabled_service_pack_flow_id);

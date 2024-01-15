@@ -36,11 +36,11 @@ function addScenario(pool) {
                     s.id                        AS service_id,
                     s.url                       AS service_url,
                     s.params                    AS service_params,
-                    sp.id                       AS service_pack_id,
+                    sp.id      AS service_pack_id,
                     sp.url                      AS service_tab_url,
                     dn.data                     AS dependency_data,
-                    dn.node_id                  AS dependency_node_id,
-                    dn.id                       AS dependency_id,
+                    dn.node_id AS dependency_node_id,
+                    dn.id      AS dependency_id,
                     esp.flow_id                 AS service_pack_flow_id
              FROM services s
                       JOIN service_packs sp ON sp.id = s.service_pack_id

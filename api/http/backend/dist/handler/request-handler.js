@@ -27,7 +27,7 @@ Url: ${nodeReq.url}
 Headers: ${JSON.stringify(nodeReq.headers, null, 4)}`, err);
         nodeRes.statusCode = 500;
         nodeRes.statusMessage = (0, http_tools_1.getHttpStatusMessage)(nodeRes.statusCode);
-        nodeRes.setHeader('Content-Type', (0, mime_types_1.getMimeType)("json"));
+        nodeRes.setHeader('Content-Type', (0, mime_types_1.getMimeType)("text"));
         nodeRes.end('Internal Server Error');
     }
 }
